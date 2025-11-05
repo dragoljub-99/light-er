@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using LightER.Analysis;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -52,6 +53,8 @@ app.MapPost("/analyze", async (HttpRequest request) =>
             }
         }
 
+        var types = TypeScanner.ScanTypes(csPaths);
+
         return Results.Ok(new
         {
             message = "uploaded",
@@ -59,9 +62,10 @@ app.MapPost("/analyze", async (HttpRequest request) =>
             files = csPaths
             .Select(Path.GetFileName)
             .OrderBy(n => n)
-            .ToArray()
+            .ToArray(),
+            types
         });
-    }
+    } 
     catch (Exception ex)
     {
         return Results.Problem($"Upload failed: {ex.Message}");

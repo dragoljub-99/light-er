@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Http.HttpResults;
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
 
+app.UseStaticFiles();
+
 app.MapGet("/api-health", () => Results.Ok(new { status = "ok" }));
 
 app.MapPost("/analyze", async (HttpRequest request) =>

@@ -1,11 +1,19 @@
 using System.IO.Compression;
+using System.Diagnostics;
 using LightER.Analysis;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 var builder = WebApplication.CreateBuilder(args);
-var app = builder.Build();
 
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenLocalhost(5112);
+});
+
+var app = builder.Build();
+app.UseDefaultFiles();
 app.UseStaticFiles();
+
 
 app.MapGet("/api-health", () => Results.Ok(new { status = "ok" }));
 
@@ -67,7 +75,7 @@ app.MapPost("/analyze", async (HttpRequest request) =>
             .ToArray(),
             types
         });
-    } 
+    }
     catch (Exception ex)
     {
         return Results.Problem($"Upload failed: {ex.Message}");
@@ -76,7 +84,7 @@ app.MapPost("/analyze", async (HttpRequest request) =>
     {
         try
         {
-            Directory.Delete(tempRoot, true); 
+            Directory.Delete(tempRoot, true);
         }
         catch (Exception ex)
         {
@@ -84,4 +92,20 @@ app.MapPost("/analyze", async (HttpRequest request) =>
         }
     }
 });
+app.Lifetime.ApplicationStarted.Register(() =>
+{
+    try
+    {
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = "http://localhost:5112/",
+            UseShellExecute = true
+        });
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"Failed to open browser: {ex.Message}");
+    }
+});
+
 app.Run();

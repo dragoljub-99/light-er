@@ -62,8 +62,16 @@ app.MapPost("/analyze", async (HttpRequest request) =>
                     csPaths.Add(p);
             }
         }
+        var mode = request.Query["resolve"].ToString();
+        var useSemantic =
+            string.Equals(mode, "semantic", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(mode, "true", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(mode, "1", StringComparison.OrdinalIgnoreCase);
 
-        var types = TypeScanner.ScanTypes(csPaths);
+        var graph = useSemantic
+        ? SemanticGraph.ScanGraphSemantic(csPaths)
+        : TypeScanner.ScanGraph(csPaths);
+       // var types = TypeScanner.ScanTypes(csPaths);
 
         return Results.Ok(new
         {
@@ -73,7 +81,14 @@ app.MapPost("/analyze", async (HttpRequest request) =>
             .Select(Path.GetFileName)
             .OrderBy(n => n)
             .ToArray(),
-            types
+            summary = new
+            {
+                resolution = useSemantic ? "semantic" : "syntax",
+                typecount = graph.Types.Count,
+                edgecount = graph.Edges.Count,
+            },
+            types = graph.Types,
+            edges = graph.Edges
         });
     }
     catch (Exception ex)

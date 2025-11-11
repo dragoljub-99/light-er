@@ -71,7 +71,6 @@ app.MapPost("/analyze", async (HttpRequest request) =>
         var graph = useSemantic
         ? SemanticGraph.ScanGraphSemantic(csPaths)
         : TypeScanner.ScanGraph(csPaths);
-       // var types = TypeScanner.ScanTypes(csPaths);
 
         return Results.Ok(new
         {
@@ -86,6 +85,7 @@ app.MapPost("/analyze", async (HttpRequest request) =>
                 resolution = useSemantic ? "semantic" : "syntax",
                 typecount = graph.Types.Count,
                 edgecount = graph.Edges.Count,
+                externalRefCount = graph.ExternalRefCount
             },
             types = graph.Types,
             edges = graph.Edges

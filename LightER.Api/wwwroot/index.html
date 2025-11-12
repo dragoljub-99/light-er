@@ -9,15 +9,21 @@
 <body>
   <main class="container">
     <h1>LightER</h1>
-    <p class="sub">Upload <code>.cs</code> or a <code>.zip</code> with C# sources. Track&nbsp;1 is syntax-only.</p>
+    <p class="sub">Upload <code>.cs</code> or a <code>.zip</code> with C# sources. Track&nbsp;1 is syntax-only; toggle semantic for T2.</p>
 
     <section class="uploader">
       <div id="drop" class="drop">
         <strong>Drop files here</strong> or
         <label class="pick">
           <input id="fileInput" type="file" name="files" multiple accept=".cs,.zip" />
+          choose files
         </label>
         <div id="hint">Accepted: .cs, .zip</div>
+      </div>
+
+      <div class="opts" style="margin-top:10px;">
+        <label><input type="checkbox" id="semanticToggle" /> Semantic resolution</label>
+        <label style="margin-left:12px;"><input type="checkbox" id="methodsToggle" /> Method signatures</label>
       </div>
 
       <div id="fileList" class="filelist"></div>

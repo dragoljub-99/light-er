@@ -7,6 +7,8 @@
   const downloadBtn = document.getElementById('downloadBtn');
   const output = document.getElementById('output');
   const status = document.getElementById('status');
+  const semanticToggle = document.getElementById('semanticToggle');
+  const methodsToggle = document.getElementById('methodsToggle');
 
   let selected = [];
   let lastJson = null;
@@ -55,7 +57,14 @@
       const fd = new FormData();
       selected.forEach(f => fd.append('files', f, f.name));
 
-      const res = await fetch('/analyze', { method: 'POST', body: fd });
+      const params = [];
+      if (semanticToggle.checked) params.push('resolve=semantic');
+      if (methodsToggle.checked)  params.push('includeMethods=true');
+
+      let url = '/analyze';
+      if (params.length) url += '?' + params.join('&');
+
+      const res = await fetch(url, { method: 'POST', body: fd });
       if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
 
       lastJson = await res.json();
@@ -64,8 +73,9 @@
       copyBtn.disabled = false;
       downloadBtn.disabled = false;
 
-      const t = lastJson.summary ? `${lastJson.summary.typeCount} types, ${lastJson.summary.edgeCount} edges` : '';
-      status.textContent = `Done. ${t}`;
+      const s = lastJson.summary || {};
+      const extra = (s.externalRefCount !== undefined) ? `, ${s.externalRefCount} external refs` : '';
+      status.textContent = `Done. ${s.typeCount ?? 0} types, ${s.edgeCount ?? 0} edges${extra}`;
     } catch (err) {
       output.textContent = '';
       status.textContent = String(err);
@@ -76,10 +86,8 @@
 
   copyBtn.addEventListener('click', async () => {
     if (!lastJson) return;
-    try {
-      await navigator.clipboard.writeText(JSON.stringify(lastJson, null, 2));
-      status.textContent = 'Copied JSON to clipboard.';
-    } catch { status.textContent = 'Copy failed.'; }
+    try { await navigator.clipboard.writeText(JSON.stringify(lastJson, null, 2)); status.textContent = 'Copied JSON to clipboard.'; }
+    catch { status.textContent = 'Copy failed.'; }
   });
 
   downloadBtn.addEventListener('click', () => {

@@ -101,7 +101,9 @@ namespace LightER.Analysis
                 }
             }
 
-            var byId = types.ToDictionary(t => t.Id, t => t, StringComparer.Ordinal);
+            var byId = new Dictionary<string, TypeInfoDto>(StringComparer.Ordinal);
+            foreach (var t in types) byId.TryAdd(t.Id, t);
+
             var byName = types.GroupBy(t => t.Name)
                               .ToDictionary(g => g.Key, g => g.Select(t => t).ToList(), StringComparer.Ordinal);
 
@@ -212,12 +214,54 @@ namespace LightER.Analysis
                 .ThenBy(e => e.Rel, StringComparer.Ordinal)
                 .ToList();
 
+            var merged = new Dictionary<string, TypeInfoDto>(StringComparer.Ordinal);
+
+            foreach (var t in types)
+            {
+                if (!merged.TryGetValue(t.Id, out var agg))
+                {
+                    agg = new TypeInfoDto
+                    {
+                        Id = t.Id,
+                        Name = t.Name,
+                        Namespace = t.Namespace,
+                        Kind = t.Kind,
+                        File = t.File,
+                        Inherits = new List<string>(),
+                        Implements = new List<string>(),
+                        Uses = new List<UseRefDto>(),
+                        UsedBy = new List<string>()
+                    };
+                    merged[t.Id] = agg;
+                }
+
+                agg.Inherits.AddRange(t.Inherits);
+                agg.Implements.AddRange(t.Implements);
+                agg.Uses.AddRange(t.Uses);
+                agg.UsedBy.AddRange(t.UsedBy);
+            }
+
+            foreach (var m in merged.Values)
+            {
+                m.Inherits = m.Inherits.Distinct(StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal).ToList();
+                m.Implements = m.Implements.Distinct(StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal).ToList();
+                m.Uses = m.Uses
+                    .OrderBy(u => u.Target, StringComparer.Ordinal)
+                    .ThenBy(u => u.Via, StringComparer.Ordinal)
+                    .ThenBy(u => u.Member, StringComparer.Ordinal)
+                    .ToList();
+                m.UsedBy = m.UsedBy.Distinct(StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal).ToList();
+            }
+
+            var typesOut = merged.Values
+                .OrderBy(t => t.Namespace, StringComparer.Ordinal)
+                .ThenBy(t => t.Name, StringComparer.Ordinal)
+                .ToList();
+
+
             return new GraphDto
             {
-                Types = types
-                    .OrderBy(t => t.Namespace, StringComparer.Ordinal)
-                    .ThenBy(t => t.Name, StringComparer.Ordinal)
-                    .ToList(),
+                Types = typesOut,
                 Edges = edges
             };
         }

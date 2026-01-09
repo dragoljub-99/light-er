@@ -63,13 +63,14 @@ app.MapPost("/analyze", async (HttpRequest request) =>
             }
         }
         var mode = request.Query["resolve"].ToString();
+        var includeMethods = string.Equals(request.Query["includeMethods"].ToString(), "true", StringComparison.OrdinalIgnoreCase);
         var useSemantic =
             string.Equals(mode, "semantic", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(mode, "true", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(mode, "1", StringComparison.OrdinalIgnoreCase);
 
         var graph = useSemantic
-        ? SemanticGraph.ScanGraphSemantic(csPaths)
+        ? SemanticGraph.ScanGraphSemantic(csPaths, includeMethods)
         : TypeScanner.ScanGraph(csPaths);
 
         return Results.Ok(new
